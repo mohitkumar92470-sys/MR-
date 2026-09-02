@@ -71,11 +71,13 @@
       background: #273244;
       color: white;
       font-size: 16px;
+      min-width: 0;
     }
 
     button {
       width: 52px;
       height: 52px;
+      flex-shrink: 0;
       border: none;
       border-radius: 50%;
       background: #2563eb;
@@ -83,8 +85,34 @@
       font-size: 20px;
     }
 
+    #micButton {
+      background: #16a34a;
+    }
+
+    #micButton.listening {
+      background: #dc2626;
+      animation: pulse 1s infinite;
+    }
+
     button:active {
       transform: scale(0.95);
+    }
+
+    @keyframes pulse {
+      50% {
+        transform: scale(1.1);
+      }
+    }
+
+    .speak-button {
+      display: block;
+      width: auto;
+      height: auto;
+      padding: 5px 10px;
+      margin-top: 8px;
+      border-radius: 15px;
+      background: #374151;
+      font-size: 14px;
     }
   </style>
 </head>
@@ -101,14 +129,22 @@
   </div>
 
   <div class="input-area">
+
+    <button id="micButton" onclick="startVoice()">
+      🎤
+    </button>
+
     <input
       id="message"
       type="text"
-      placeholder="Message likho..."
+      placeholder="Message likho ya 🎤 dabao..."
       onkeydown="if(event.key==='Enter') sendMessage()"
     >
 
-    <button onclick="sendMessage()">➤</button>
+    <button onclick="sendMessage()">
+      ➤
+    </button>
+
   </div>
 
   <script>
@@ -116,6 +152,65 @@
       "https://mr-ai-assistant.mohitkumar92470.workers.dev/api/chat";
 
     let messages = [];
+
+    // =========================
+    // VOICE INPUT 🎤
+    // =========================
+
+    const SpeechRecognition =
+      window.SpeechRecognition ||
+      window.webkitSpeechRecognition;
+
+    let recognition = null;
+
+    if (SpeechRecognition) {
+      recognition = new SpeechRecognition();
+
+      recognition.lang = "hi-IN";
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      recognition.onstart = function () {
+        document.getElementById("micButton")
+          .classList.add("listening");
+
+        document.getElementById("message").placeholder =
+          "🎤 Sun raha hoon...";
+      };
+
+      recognition.onresult = function (event) {
+        const text = event.results[0][0].transcript;
+
+        document.getElementById("message").value = text;
+
+        sendMessage();
+      };
+
+      recognition.onerror = function () {
+        alert("🎤 Mic se awaaz nahi mil paayi. Dobara try karo.");
+      };
+
+      recognition.onend = function () {
+        document.getElementById("micButton")
+          .classList.remove("listening");
+
+        document.getElementById("message").placeholder =
+          "Message likho ya 🎤 dabao...";
+      };
+    }
+
+    function startVoice() {
+      if (!recognition) {
+        alert("Is browser mein voice input supported nahi hai.");
+        return;
+      }
+
+      recognition.start();
+    }
+
+    // =========================
+    // SEND MESSAGE
+    // =========================
 
     async function sendMessage() {
       const input = document.getElementById("message");
@@ -159,7 +254,9 @@
 
           if (done) break;
 
-          buffer += decoder.decode(value, { stream: true });
+          buffer += decoder.decode(value, {
+            stream: true
+          });
 
           const parts = buffer.split("\n\n");
           buffer = parts.pop();
@@ -186,9 +283,10 @@
 
                 if (textChunk) {
                   fullReply += textChunk;
-                  aiBox.textContent = fullReply;
+                  aiBox.firstChild.textContent = fullReply;
                   scrollChat();
                 }
+
               } catch (e) {
                 // Ignore incomplete stream data
               }
@@ -197,8 +295,10 @@
         }
 
         if (!fullReply) {
-          aiBox.textContent =
+          fullReply =
             "AI se response nahi mila. Dobara try karo.";
+
+          aiBox.firstChild.textContent = fullReply;
         }
 
         messages.push({
@@ -206,26 +306,76 @@
           content: fullReply
         });
 
+        // AI जवाब को आवाज़ में बोलना 🔊
+        speakText(fullReply);
+
       } catch (error) {
         console.error(error);
 
-        aiBox.textContent =
+        aiBox.firstChild.textContent =
           "❌ AI connect nahi ho pa raha. Thodi der baad dobara try karo.";
       }
     }
 
+    // =========================
+    // ADD MESSAGE
+    // =========================
+
     function addMessage(text, type) {
       const chat = document.getElementById("chat");
 
-      const div = document.createElement("div");
-      div.className = "message " + type;
-      div.textContent = text;
+      const wrapper = document.createElement("div");
+      wrapper.className = "message " + type;
 
-      chat.appendChild(div);
+      const textDiv = document.createElement("div");
+      textDiv.textContent = text;
+
+      wrapper.appendChild(textDiv);
+
+      // AI message ke saath speaker button 🔊
+      if (type === "ai") {
+        const speakButton = document.createElement("button");
+
+        speakButton.className = "speak-button";
+        speakButton.textContent = "🔊 सुनें";
+
+        speakButton.onclick = function () {
+          speakText(textDiv.textContent);
+        };
+
+        wrapper.appendChild(speakButton);
+      }
+
+      chat.appendChild(wrapper);
       scrollChat();
 
-      return div;
+      return wrapper;
     }
+
+    // =========================
+    // TEXT TO SPEECH 🔊
+    // =========================
+
+    function speakText(text) {
+      if (!("speechSynthesis" in window)) {
+        return;
+      }
+
+      window.speechSynthesis.cancel();
+
+      const speech = new SpeechSynthesisUtterance(text);
+
+      // Hindi / Bhojpuri ke liye Hindi voice
+      speech.lang = "hi-IN";
+      speech.rate = 0.9;
+      speech.pitch = 1;
+
+      window.speechSynthesis.speak(speech);
+    }
+
+    // =========================
+    // SCROLL
+    // =========================
 
     function scrollChat() {
       const chat = document.getElementById("chat");
