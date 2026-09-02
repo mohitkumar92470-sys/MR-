@@ -112,7 +112,12 @@
   </div>
 
   <script>
-    function sendMessage() {
+    const API_URL =
+      "https://mr-ai-assistant.mohitkumar92470.workers.dev/api/chat";
+
+    let messages = [];
+
+    async function sendMessage() {
       const input = document.getElementById("message");
       const text = input.value.trim();
 
@@ -121,10 +126,92 @@
       addMessage(text, "user");
       input.value = "";
 
-      setTimeout(() => {
-        let reply = getReply(text);
-        addMessage(reply, "ai");
-      }, 500);
+      messages.push({
+        role: "user",
+        content: text
+      });
+
+      const aiBox = addMessage("Thinking... 🤔", "ai");
+
+      try {
+        const response = await fetch(API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            messages: messages
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error("Server error: " + response.status);
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        let buffer = "";
+        let fullReply = "";
+
+        while (true) {
+          const { value, done } = await reader.read();
+
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+
+          const parts = buffer.split("\n\n");
+          buffer = parts.pop();
+
+          for (const part of parts) {
+            const lines = part.split("\n");
+
+            for (const line of lines) {
+              if (!line.startsWith("data:")) continue;
+
+              const data = line.slice(5).trim();
+
+              if (!data || data === "[DONE]") continue;
+
+              try {
+                const json = JSON.parse(data);
+
+                const textChunk =
+                  json.response ||
+                  json.content ||
+                  json.text ||
+                  json.delta ||
+                  "";
+
+                if (textChunk) {
+                  fullReply += textChunk;
+                  aiBox.textContent = fullReply;
+                  scrollChat();
+                }
+              } catch (e) {
+                // Ignore incomplete stream data
+              }
+            }
+          }
+        }
+
+        if (!fullReply) {
+          aiBox.textContent =
+            "AI se response nahi mila. Dobara try karo.";
+        }
+
+        messages.push({
+          role: "assistant",
+          content: fullReply
+        });
+
+      } catch (error) {
+        console.error(error);
+
+        aiBox.textContent =
+          "❌ AI connect nahi ho pa raha. Thodi der baad dobara try karo.";
+      }
     }
 
     function addMessage(text, type) {
@@ -135,30 +222,14 @@
       div.textContent = text;
 
       chat.appendChild(div);
-      chat.scrollTop = chat.scrollHeight;
+      scrollChat();
+
+      return div;
     }
 
-    function getReply(text) {
-      const msg = text.toLowerCase();
-
-      if (msg.includes("hello") || msg.includes("hi") || msg.includes("namaste")) {
-        return "Namaste! 😊 Kaise ho? Main aapki help karne ke liye ready hoon.";
-      }
-
-      if (msg.includes("naam")) {
-        return "Mera naam MR AI Assistant hai 🤖";
-      }
-
-      if (msg.includes("kaise ho")) {
-        return "Main bilkul ready hoon 😎 Aap batao kya karna hai?";
-      }
-
-      if (msg.includes("thank")) {
-        return "You're welcome! ❤️";
-      }
-
-      return "Aapne kaha: " + text +
-        "\\n\\nMain abhi basic mode mein hoon. Agle step mein hum isme real AI connect karenge. 🚀";
+    function scrollChat() {
+      const chat = document.getElementById("chat");
+      chat.scrollTop = chat.scrollHeight;
     }
   </script>
 
