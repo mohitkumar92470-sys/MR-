@@ -388,42 +388,6 @@ if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("./sw.js");
   });
 }
-let wakeRecognition;
-
-function startHeyMR() {
-  const SpeechRecognition =
-    window.SpeechRecognition || window.webkitSpeechRecognition;
-
-  if (!SpeechRecognition) {
-    alert("इस फोन में voice recognition supported नहीं है।");
-    return;
-  }
-
-  wakeRecognition = new SpeechRecognition();
-  wakeRecognition.lang = "hi-IN";
-  wakeRecognition.continuous = true;
-  wakeRecognition.interimResults = false;
-
-  wakeRecognition.onresult = function(event) {
-    const text =
-      event.results[event.results.length - 1][0].transcript
-        .toLowerCase()
-        .trim();
-
-    if (text.includes("hey mr") || text.includes("हे एमआर")) {
-      document.getElementById("message").focus();
-      startListening();
-    }
-  };
-
-  wakeRecognition.onend = function() {
-    try {
-      wakeRecognition.start();
-    } catch (e) {}
-  };
-
-  wakeRecognition.start();
-}
 </script>
 </body>
 </html>
