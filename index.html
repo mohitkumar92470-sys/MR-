@@ -438,11 +438,6 @@ function startHeyMR() {
     wakeRecognition.start();
   } catch (e) {}
 }
-
-// Page खुलने पर Hey MR सुनना शुरू
-window.addEventListener("load", () => {
-  setTimeout(startHeyMR, 1000);
-});
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("./sw.js");
