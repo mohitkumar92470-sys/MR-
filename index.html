@@ -219,7 +219,79 @@
       const text = input.value.trim();
 
       if (!text) return;
+// =========================
+// MR QUICK COMMANDS ⚡
+// =========================
 
+const command = text.toLowerCase();
+
+if (
+  command.includes("time") ||
+  command.includes("समय") ||
+  command.includes("टाइम")
+) {
+  const now = new Date();
+
+  const time = now.toLocaleTimeString("hi-IN", {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+
+  addMessage("Boss 👑 अभी समय है " + time, "ai");
+
+  if ("speechSynthesis" in window) {
+    speakText("Boss, अभी समय है " + time);
+  }
+
+  return;
+}
+
+if (
+  command.includes("youtube") ||
+  command.includes("यूट्यूब")
+) {
+  addMessage("Boss 👑 YouTube खोल रहा हूँ।", "ai");
+  window.open("https://www.youtube.com/", "_blank");
+  return;
+}
+
+if (
+  command.includes("google") ||
+  command.includes("गूगल")
+) {
+  const searchText = text
+    .replace(/google/gi, "")
+    .replace(/गूगल/g, "")
+    .trim();
+
+  if (searchText) {
+    addMessage("Boss 👑 Google पर search कर रहा हूँ।", "ai");
+
+    window.open(
+      "https://www.google.com/search?q=" +
+      encodeURIComponent(searchText),
+      "_blank"
+    );
+  } else {
+    window.open("https://www.google.com/", "_blank");
+  }
+
+  return;
+}
+
+if (
+  command.includes("weather") ||
+  command.includes("मौसम")
+) {
+  addMessage("Boss 👑 मौसम की जानकारी खोल रहा हूँ।", "ai");
+
+  window.open(
+    "https://www.google.com/search?q=weather+near+me",
+    "_blank"
+  );
+
+  return;
+}
       addMessage(text, "user");
       input.value = "";
 
