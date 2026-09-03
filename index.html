@@ -237,7 +237,7 @@ if (
     minute: "2-digit"
   });
 
-  addMessage("Boss 👑 अभी समय है " + time, "ai");
+  addMessage(" ji Boss अभी समय है " + time, "ai");
 
   if ("speechSynthesis" in window) {
     speakText("Boss, अभी समय है " + time);
@@ -250,7 +250,7 @@ if (
   command.includes("youtube") ||
   command.includes("यूट्यूब")
 ) {
-  addMessage("Boss 👑 YouTube खोल रहा हूँ।", "ai");
+  addMessage("ji Boss YouTube खोल रहा हूँ।", "ai");
   window.open("https://www.youtube.com/", "_blank");
   return;
 }
@@ -265,7 +265,7 @@ if (
     .trim();
 
   if (searchText) {
-    addMessage("Boss 👑 Google पर search कर रहा हूँ।", "ai");
+    addMessage("ji Boss Google पर search कर रहा हूँ।", "ai");
 
     window.open(
       "https://www.google.com/search?q=" +
@@ -283,7 +283,7 @@ if (
   command.includes("weather") ||
   command.includes("मौसम")
 ) {
-  addMessage("Boss 👑 मौसम की जानकारी खोल रहा हूँ।", "ai");
+  addMessage("ji Boss मौसम की जानकारी खोल रहा हूँ।", "ai");
 
   window.open(
     "https://www.google.com/search?q=weather+near+me",
