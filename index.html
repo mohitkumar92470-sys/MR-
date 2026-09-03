@@ -383,6 +383,66 @@
       const chat = document.getElementById("chat");
       chat.scrollTop = chat.scrollHeight;
     }
+    // =========================
+// HEY MR WAKE WORD 🎤
+// =========================
+
+let wakeRecognition;
+
+function startHeyMR() {
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!SpeechRecognition) {
+    alert("इस फोन में voice recognition supported नहीं है।");
+    return;
+  }
+
+  wakeRecognition = new SpeechRecognition();
+  wakeRecognition.lang = "hi-IN";
+  wakeRecognition.continuous = true;
+  wakeRecognition.interimResults = false;
+
+  wakeRecognition.onresult = function(event) {
+    const text =
+      event.results[event.results.length - 1][0].transcript
+        .toLowerCase()
+        .trim();
+
+    if (
+      text.includes("hey mr") ||
+      text.includes("हे एमआर") ||
+      text.includes("हे मिस्टर")
+    ) {
+      try {
+        wakeRecognition.stop();
+      } catch (e) {}
+
+      document.getElementById("message").focus();
+
+      if (typeof startListening === "function") {
+        startListening();
+      }
+    }
+  };
+
+  wakeRecognition.onend = function() {
+    setTimeout(() => {
+      try {
+        wakeRecognition.start();
+      } catch (e) {}
+    }, 500);
+  };
+
+  try {
+    wakeRecognition.start();
+  } catch (e) {}
+}
+
+// Page खुलने पर Hey MR सुनना शुरू
+window.addEventListener("load", () => {
+  setTimeout(startHeyMR, 1000);
+});
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("./sw.js");
