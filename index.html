@@ -383,61 +383,150 @@
       const chat = document.getElementById("chat");
       chat.scrollTop = chat.scrollHeight;
     }
-    // =========================
+  // =========================
 // HEY MR WAKE WORD 🎤
 // =========================
 
-let wakeRecognition;
+let wakeRecognition = null;
+let wakeActive = false;
+
+function createHeyMRButton() {
+  if (document.getElementById("heyMrButton")) return;
+
+  const button = document.createElement("button");
+  button.id = "heyMrButton";
+  button.textContent = "👂 Hey MR OFF";
+
+  button.style.position = "fixed";
+  button.style.top = "70px";
+  button.style.right = "15px";
+  button.style.zIndex = "9999";
+  button.style.width = "150px";
+  button.style.height = "45px";
+  button.style.border = "none";
+  button.style.borderRadius = "25px";
+  button.style.background = "#2563eb";
+  button.style.color = "white";
+  button.style.fontSize = "15px";
+  button.style.fontWeight = "bold";
+
+  button.onclick = function () {
+    if (wakeActive) {
+      stopHeyMR();
+    } else {
+      startHeyMR();
+    }
+  };
+
+  document.body.appendChild(button);
+}
 
 function startHeyMR() {
   const SpeechRecognition =
-    window.SpeechRecognition || window.webkitSpeechRecognition;
+    window.SpeechRecognition ||
+    window.webkitSpeechRecognition;
 
   if (!SpeechRecognition) {
     alert("इस फोन में voice recognition supported नहीं है।");
     return;
   }
 
+  if (wakeActive) return;
+
+  wakeActive = true;
+
   wakeRecognition = new SpeechRecognition();
   wakeRecognition.lang = "hi-IN";
   wakeRecognition.continuous = true;
   wakeRecognition.interimResults = false;
 
-  wakeRecognition.onresult = function(event) {
-    const text =
+  wakeRecognition.onresult = function (event) {
+    const result =
       event.results[event.results.length - 1][0].transcript
         .toLowerCase()
         .trim();
 
     if (
-      text.includes("hey mr") ||
-      text.includes("हे एमआर") ||
-      text.includes("हे मिस्टर")
+      result.includes("hey mr") ||
+      result.includes("हे एमआर") ||
+      result.includes("हे मिस्टर")
     ) {
+      wakeActive = false;
+
       try {
         wakeRecognition.stop();
       } catch (e) {}
 
-      document.getElementById("message").focus();
+      const messageBox =
+        document.getElementById("message");
 
-      if (typeof startListening === "function") {
-        startListening();
+      if (messageBox) {
+        messageBox.focus();
       }
+
+      // थोड़ा wait करके normal mic शुरू करो
+      setTimeout(() => {
+        if (typeof startListening === "function") {
+          startListening();
+        }
+      }, 300);
+
+      updateHeyMRButton();
     }
   };
 
-  wakeRecognition.onend = function() {
-    setTimeout(() => {
-      try {
-        wakeRecognition.start();
-      } catch (e) {}
-    }, 500);
+  wakeRecognition.onerror = function (event) {
+    console.log("Hey MR error:", event.error);
+  };
+
+  wakeRecognition.onend = function () {
+    if (wakeActive) {
+      setTimeout(() => {
+        try {
+          wakeRecognition.start();
+        } catch (e) {}
+      }, 500);
+    }
   };
 
   try {
     wakeRecognition.start();
   } catch (e) {}
+
+  updateHeyMRButton();
 }
+
+function stopHeyMR() {
+  wakeActive = false;
+
+  if (wakeRecognition) {
+    try {
+      wakeRecognition.stop();
+    } catch (e) {}
+  }
+
+  updateHeyMRButton();
+}
+
+function updateHeyMRButton() {
+  const button =
+    document.getElementById("heyMrButton");
+
+  if (!button) return;
+
+  if (wakeActive) {
+    button.textContent = "👂 Hey MR ON";
+    button.style.background = "#16a34a";
+  } else {
+    button.textContent = "👂 Hey MR OFF";
+    button.style.background = "#2563eb";
+  }
+}
+
+// Page खुलने पर button दिखाएँ
+window.addEventListener("load", () => {
+  createHeyMRButton();
+});
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("./sw.js");
